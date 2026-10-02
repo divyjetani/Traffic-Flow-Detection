@@ -1,0 +1,7 @@
+ultralytics>=8.3.0     # YOLO detector + ByteTrack/BoT-SORT trackers + training
+opencv-python>=4.8
+numpy>=1.24
+pyyaml>=6.0
+lapx>=0.5.5            # tracker dependency (ultralytics also auto-installs it)
+# Optional: ground-level road segmentation (road.use_segformer: true)
+# transformers>=4.40

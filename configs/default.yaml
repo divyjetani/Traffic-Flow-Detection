@@ -1,0 +1,30 @@
+model:
+  weights: yolo11s.pt          # COCO-pretrained (auto-downloads). Replace with weights/best_traffic.pt after training.
+  imgsz: 960                   # bigger = better for small/far vehicles
+  conf: 0.30
+  iou: 0.50
+  device: null                 # null = auto, or "cpu", 0, "cuda:0"
+  tracker: bytetrack.yaml      # or botsort.yaml
+  # classes are matched by NAME, so COCO and VisDrone/DETRAC-trained models both work
+  vehicle_names: [car, van, truck, bus, motorcycle, motor, bicycle]
+
+flow:
+  anchor: bottom               # bottom = ground contact point (CCTV), center (drone/top-down)
+  heading_window: 10           # frames used to compute current heading
+  min_heading_px: 6            # ignore jitter below this displacement
+  min_travel_px: 80            # a track is counted once it has moved this far (auto direction counting)
+  cell_px: 16                  # flow-field grid cell size
+  min_cell_votes: 4            # votes needed for a cell to count as "road"
+  blur_cells: 1.5              # gaussian smoothing of the flow field (in cells)
+  min_zone_cells: 12           # drop tiny flow zones
+  update_every: 15             # frames between flow-field/road refreshes
+  rate_window_s: 60            # window for vehicles/min
+
+road:
+  use_segformer: false         # needs: pip install transformers torch ; best for ground-level cameras
+  segformer_model: nvidia/segformer-b0-finetuned-cityscapes-512-1024
+
+output:
+  save_video: true
+  trail_len: 30
+  overlay_alpha: 0.35

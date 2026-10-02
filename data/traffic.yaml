@@ -1,0 +1,11 @@
+# Template for your OWN labelled data (YOLO format: one .txt per image, "cls xc yc w h" normalised)
+# Layout:  data/custom/images/{train,val}/*.jpg   data/custom/labels/{train,val}/*.txt
+path: data/custom
+train: images/train
+val: images/val
+names:
+  0: car
+  1: van
+  2: bus
+  3: truck
+  4: motorcycle

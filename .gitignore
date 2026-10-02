@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+runs/
+outputs/
+weights/*.pt
+data/detrac_yolo/
+data/custom/
+*.mp4
+.venv/
