@@ -9,9 +9,7 @@
 <body>
   <main class="page">
     <header class="header">
-      <div class="brand-mark" aria-hidden="true">TF</div>
       <div>
-        <p class="eyebrow">VIDEO ANALYSIS</p>
         <h1>Traffic Flow Detection</h1>
         <p class="intro">Upload a traffic video to detect vehicles and visualize their movement.</p>
       </div>
@@ -51,16 +49,20 @@
         <article class="video-card">
           <div class="video-title"><h3>Annotated video</h3><span class="tag tag-output">OUTPUT</span></div>
           <div id="output-placeholder" class="output-placeholder">
-            <span class="spinner" aria-hidden="true"></span>
-            <p>Annotated video will appear here</p>
+            <span class="placeholder-icon" aria-hidden="true">▶</span>
+            <p>Select a video and start processing to see annotated frames</p>
           </div>
-          <video id="output-video" controls playsinline hidden></video>
+          <img id="live-preview" class="live-preview" alt="Live annotated processing preview" hidden>
+          <video id="output-video" controls playsinline autoplay muted preload="auto" hidden></video>
+          <div id="processing-progress" class="processing-progress" hidden>
+            <progress id="progress-meter" max="100" value="0"></progress>
+            <span id="progress-label">Waiting for processing…</span>
+          </div>
           <p id="output-name" class="video-caption"></p>
         </article>
       </div>
     </section>
-    <footer>Powered by YOLO vehicle detection &amp; ByteTrack</footer>
   </main>
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='app.js', v='3') }}" defer></script>
 </body>
 </html>

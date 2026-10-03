@@ -43,9 +43,12 @@ and opens the upload page in your browser. Alternatively, install the dependenci
 ```bash
 python app.py
 ```
-Open http://127.0.0.1:5000, upload a video, and wait for processing to finish. The original and
-annotated videos appear side by side; the downloadable result is saved as
-`outputs/<job-id>/<original-name>_annoted.mp4`. Uploaded temporary video files are removed after processing.
+Open http://127.0.0.1:5000, upload a video, and watch annotated frames update live with a frame
+counter and percentage progress when the source video reports its duration. The original and
+processed videos appear side by side; the downloadable result is saved in `outputs/` as
+`<original-name>_annoted.mp4`. If that name already exists, a unique suffix is added so earlier
+results are preserved. The app uses FFmpeg, when available, to encode browser-playable H.264 video.
+Uploaded temporary video files are removed after processing.
 
 ### Counting lines (optional, for a specific road section)
 ```bash

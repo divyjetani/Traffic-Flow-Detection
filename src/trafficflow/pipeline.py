@@ -3,8 +3,10 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
+from typing import Callable
 
 import cv2
+import numpy as np
 
 from . import road as roadmod
 from .flow import DIR_NAMES, FlowAnalyzer
@@ -26,6 +28,13 @@ def _fps(src):
     return fps if fps > 1 else 25.0
 
 
+def _frame_count(src):
+    cap = cv2.VideoCapture(src)
+    count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+    return max(count, 0)
+
+
 def _parse(r, names):
     dets = []
     if r.boxes is not None and r.boxes.id is not None:
@@ -37,7 +46,8 @@ def _parse(r, names):
 
 
 def run(source, cfg, out_dir="outputs", lines_path=None, show=False, max_frames=None,
-        annotated_filename="annotated.mp4"):
+        annotated_filename="annotated.mp4",
+        progress_callback: Callable[[int, int, np.ndarray], None] | None = None):
     from ultralytics import YOLO
 
     out = Path(out_dir)
@@ -51,7 +61,9 @@ def run(source, cfg, out_dir="outputs", lines_path=None, show=False, max_frames=
         raise SystemExit(f"No vehicle classes {sorted(wanted)} in model classes {list(names.values())}")
 
     src = int(source) if str(source).isdigit() else str(source)
-    fps, lines = _fps(src), load_lines(lines_path)
+    fps, total_frames, lines = _fps(src), _frame_count(src), load_lines(lines_path)
+    if max_frames:
+        total_frames = min(total_frames, max_frames) if total_frames else max_frames
     an = writer = first = seg = None
     n = 0
     stream = model.track(source=src, stream=True, persist=True, tracker=mc["tracker"], conf=mc["conf"],
@@ -73,6 +85,8 @@ def run(source, cfg, out_dir="outputs", lines_path=None, show=False, max_frames=
         if writer:
             writer.write(vis)
         n = i + 1
+        if progress_callback:
+            progress_callback(n, total_frames, vis)
         if show:
             cv2.imshow("traffic flow (q to quit)", vis)
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -105,4 +119,4 @@ def _save(out, an, first, seg, cfg, n):
     json.dump(an.summary(n), open(out / "summary.json", "w"), indent=2)
     base = roadmod.tint(first, seg) if seg is not None else first
     cv2.imwrite(str(out / "flow_map.png"), an.field.render(base, 0.5))
-    print(f"Done. Results in {out}/  ({annotated_filename}, flow_map.png, summary.json, events.csv, per_minute.csv)")
+    print(f"Done. Results in {out}/  (annotated video, flow_map.png, summary.json, events.csv, per_minute.csv)")

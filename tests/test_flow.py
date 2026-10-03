@@ -1,11 +1,16 @@
 """Synthetic test of the flow logic (no model / video needed):  python tests/test_flow.py"""
 import sys
+import contextlib
+import io
+import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from trafficflow.config import load_config  # noqa: E402
 from trafficflow.flow import FlowAnalyzer, FlowField  # noqa: E402
+from trafficflow.pipeline import _save  # noqa: E402
 
 
 def make():
@@ -49,6 +54,24 @@ def test_render_hides_flow_arrows_by_default():
     draw_arrow.assert_not_called()
 
 
+def test_save_accepts_custom_annotated_filename():
+    import numpy as np
+
+    field = SimpleNamespace(refresh=lambda: None, render=lambda frame, _alpha: frame)
+    analyzer = SimpleNamespace(
+        field=field,
+        events=[],
+        per_minute=lambda: {},
+        summary=lambda _frames: {},
+    )
+    with tempfile.TemporaryDirectory() as directory:
+        output = io.StringIO()
+        with patch("trafficflow.pipeline.cv2.imwrite"), contextlib.redirect_stdout(output):
+            _save(Path(directory), analyzer, np.zeros((2, 2, 3), dtype=np.uint8), None, {}, 0)
+    assert "Done. Results" in output.getvalue()
+
+
 if __name__ == "__main__":
     test_directions_lines_and_zones()
     test_render_hides_flow_arrows_by_default()
+    test_save_accepts_custom_annotated_filename()
