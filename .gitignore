@@ -7,3 +7,5 @@ data/detrac_yolo/
 data/custom/
 *.mp4
 .venv/
+inputs/
+yolo11s.pt
