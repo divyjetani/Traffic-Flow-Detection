@@ -36,6 +36,17 @@ python scripts/run.py --source traffic.mp4 --segformer             # + road segm
 ```
 `yolo11s.pt` (COCO) downloads automatically and already detects car / bus / truck / motorcycle.
 
+## Web app
+On Windows, run `run` from Command Prompt at the repository root (or `.\run.bat` from PowerShell).
+The launcher creates/activates `.venv` as needed, installs missing dependencies, starts the web app,
+and opens the upload page in your browser. Alternatively, install the dependencies above and run:
+```bash
+python app.py
+```
+Open http://127.0.0.1:5000, upload a video, and wait for processing to finish. The original and
+annotated videos appear side by side; the downloadable result is saved as
+`outputs/<job-id>/<original-name>_annoted.mp4`. Uploaded temporary video files are removed after processing.
+
 ### Counting lines (optional, for a specific road section)
 ```bash
 python scripts/annotate_lines.py --source data/videos/traffic.mp4 --out configs/lines.json

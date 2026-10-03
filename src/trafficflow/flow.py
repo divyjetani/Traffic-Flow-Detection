@@ -103,7 +103,7 @@ class FlowField:
         keep = (self._state or self.refresh())[0]
         return self._up(keep.astype(np.uint8)) > 0
 
-    def render(self, frame, alpha=0.35, arrows=True):
+    def render(self, frame, alpha=0.35, arrows=False):
         keep, dom, _ = self._state or self.refresh()
         if not keep.any():
             return frame

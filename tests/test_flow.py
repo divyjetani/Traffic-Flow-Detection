@@ -1,10 +1,11 @@
 """Synthetic test of the flow logic (no model / video needed):  python tests/test_flow.py"""
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from trafficflow.config import load_config  # noqa: E402
-from trafficflow.flow import FlowAnalyzer  # noqa: E402
+from trafficflow.flow import FlowAnalyzer, FlowField  # noqa: E402
 
 
 def make():
@@ -37,5 +38,17 @@ def test_directions_lines_and_zones():
     print("OK", s["direction_counts"], s["line_counts"], [z["name"] for z in s["flow_zones"]])
 
 
+def test_render_hides_flow_arrows_by_default():
+    import numpy as np
+
+    field = FlowField((640, 480), cell=16, min_votes=0.1, blur=1.5, min_area=1)
+    field.add(100, 100, 0)
+    field.refresh()
+    with patch("trafficflow.flow.cv2.arrowedLine") as draw_arrow:
+        field.render(np.zeros((480, 640, 3), dtype=np.uint8))
+    draw_arrow.assert_not_called()
+
+
 if __name__ == "__main__":
     test_directions_lines_and_zones()
+    test_render_hides_flow_arrows_by_default()

@@ -36,7 +36,8 @@ def _parse(r, names):
     return dets
 
 
-def run(source, cfg, out_dir="outputs", lines_path=None, show=False, max_frames=None):
+def run(source, cfg, out_dir="outputs", lines_path=None, show=False, max_frames=None,
+        annotated_filename="annotated.mp4"):
     from ultralytics import YOLO
 
     out = Path(out_dir)
@@ -61,7 +62,7 @@ def run(source, cfg, out_dir="outputs", lines_path=None, show=False, max_frames=
             h, w = frame.shape[:2]
             an, first = FlowAnalyzer(fps, (w, h), cfg, lines), frame.copy()
             if cfg["output"]["save_video"]:
-                writer = cv2.VideoWriter(str(out / "annotated.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+                writer = cv2.VideoWriter(str(out / annotated_filename), cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
             if cfg["road"]["use_segformer"]:
                 seg = roadmod.segformer_road_mask(frame, cfg["road"]["segformer_model"], mc["device"])
         dets = _parse(r, names)
@@ -104,4 +105,4 @@ def _save(out, an, first, seg, cfg, n):
     json.dump(an.summary(n), open(out / "summary.json", "w"), indent=2)
     base = roadmod.tint(first, seg) if seg is not None else first
     cv2.imwrite(str(out / "flow_map.png"), an.field.render(base, 0.5))
-    print(f"Done. Results in {out}/  (annotated.mp4, flow_map.png, summary.json, events.csv, per_minute.csv)")
+    print(f"Done. Results in {out}/  ({annotated_filename}, flow_map.png, summary.json, events.csv, per_minute.csv)")

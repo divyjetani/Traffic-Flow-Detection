@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traffic Flow Detection</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div class="brand-mark" aria-hidden="true">TF</div>
+      <div>
+        <p class="eyebrow">VIDEO ANALYSIS</p>
+        <h1>Traffic Flow Detection</h1>
+        <p class="intro">Upload a traffic video to detect vehicles and visualize their movement.</p>
+      </div>
+    </header>
+
+    <section class="upload-card" aria-labelledby="upload-title">
+      <div>
+        <h2 id="upload-title">Analyze a video</h2>
+        <p class="muted">Choose a video file to create an annotated version.</p>
+      </div>
+      <form id="upload-form">
+        <label class="file-picker" for="video-input">
+          <span class="file-icon" aria-hidden="true">↑</span>
+          <span id="file-label">Choose a video</span>
+          <span class="file-hint">MP4, MOV, AVI, MKV, M4V or WebM</span>
+        </label>
+        <input id="video-input" name="video" type="file" accept="video/*,.mkv,.avi,.webm,.m4v" required>
+        <button id="submit-button" type="submit" disabled>Start processing</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite">Select a video to get started.</p>
+    </section>
+
+    <section id="results" class="results" aria-label="Video comparison" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">YOUR RESULTS</p>
+          <h2>Before &amp; after</h2>
+        </div>
+        <a id="download-link" class="download-link" hidden>↓&nbsp; Save annotated video</a>
+      </div>
+      <div class="video-grid">
+        <article class="video-card">
+          <div class="video-title"><h3>Original video</h3><span class="tag">INPUT</span></div>
+          <video id="original-video" controls playsinline></video>
+          <p id="original-name" class="video-caption"></p>
+        </article>
+        <article class="video-card">
+          <div class="video-title"><h3>Annotated video</h3><span class="tag tag-output">OUTPUT</span></div>
+          <div id="output-placeholder" class="output-placeholder">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Annotated video will appear here</p>
+          </div>
+          <video id="output-video" controls playsinline hidden></video>
+          <p id="output-name" class="video-caption"></p>
+        </article>
+      </div>
+    </section>
+    <footer>Powered by YOLO vehicle detection &amp; ByteTrack</footer>
+  </main>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
