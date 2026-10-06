@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from trafficflow.config import load_config  # noqa: E402
+from trafficflow.models import MODEL_CHOICES, TRAINED_WEIGHTS, default_model_choice, resolve_model_weights  # noqa: E402
 from trafficflow.pipeline import run  # noqa: E402
 
 INPUT_DIR = ROOT / "inputs"
@@ -49,7 +50,8 @@ def _update_progress(job_id: str, frame: int, total_frames: int, image) -> None:
         jobs_condition.notify_all()
 
 
-def _process_video(job_id: str, input_path: Path, output_dir: Path, output_name: str) -> None:
+def _process_video(job_id: str, input_path: Path, output_dir: Path, output_name: str,
+                   model_choice: str = "pretrained") -> None:
     with jobs_condition:
         jobs[job_id]["status"] = "processing"
         jobs_condition.notify_all()
@@ -57,9 +59,11 @@ def _process_video(job_id: str, input_path: Path, output_dir: Path, output_name:
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
         raw_name = f".{Path(output_name).stem}_opencv.mp4"
+        config = load_config()
+        config["model"]["weights"] = resolve_model_weights(model_choice)
         run(
             str(input_path),
-            load_config(),
+            config,
             str(output_dir),
             annotated_filename=raw_name,
             progress_callback=lambda frame, total, image: _update_progress(
@@ -111,7 +115,12 @@ def _process_video(job_id: str, input_path: Path, output_dir: Path, output_name:
 
 @app.get("/")
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        model_choices=MODEL_CHOICES,
+        default_model=default_model_choice(),
+        trained_model_available=TRAINED_WEIGHTS.is_file(),
+    )
 
 
 @app.post("/api/jobs")
@@ -124,6 +133,14 @@ def create_job():
     extension = Path(original_name).suffix.lower()
     if not original_name or extension not in ALLOWED_EXTENSIONS:
         return jsonify(error="Upload a supported video file (MP4, MOV, AVI, MKV, M4V, or WebM)."), 400
+
+    model_choice = request.form.get("model_choice", default_model_choice())
+    if model_choice not in MODEL_CHOICES:
+        return jsonify(error="Choose either the trained or pretrained detector."), 400
+    try:
+        resolve_model_weights(model_choice)
+    except FileNotFoundError as exc:
+        return jsonify(error=str(exc)), 409
 
     INPUT_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -144,6 +161,7 @@ def create_job():
             output_name = f"{Path(original_name).stem}_annoted_{job_id[:8]}.mp4"
         jobs[job_id] = {
             "status": "queued",
+            "model_choice": model_choice,
             "output_name": output_name,
             "frame": 0,
             "total_frames": 0,
@@ -151,8 +169,8 @@ def create_job():
             "preview": None,
             "preview_sequence": 0,
         }
-    executor.submit(_process_video, job_id, input_path, OUTPUT_DIR, output_name)
-    return jsonify(job_id=job_id), 202
+    executor.submit(_process_video, job_id, input_path, OUTPUT_DIR, output_name, model_choice)
+    return jsonify(job_id=job_id, model_choice=model_choice), 202
 
 
 @app.get("/api/jobs/<job_id>")
@@ -163,7 +181,7 @@ def job_status(job_id: str):
             return jsonify(error="Processing job not found."), 404
         result = {
             key: job.get(key)
-            for key in ("status", "output_name", "frame", "total_frames", "progress", "error")
+            for key in ("status", "output_name", "model_choice", "frame", "total_frames", "progress", "error")
         }
 
     if result["status"] == "completed":

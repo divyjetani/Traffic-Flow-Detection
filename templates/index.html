@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Traffic Flow Detection</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='2') }}">
 </head>
 <body>
   <main class="page">
@@ -21,6 +21,18 @@
         <p class="muted">Choose a video file to create an annotated version.</p>
       </div>
       <form id="upload-form">
+        <label class="model-picker" for="model-choice">
+          <span>Detector model</span>
+          <select id="model-choice" name="model_choice">
+            {% for key, label in model_choices.items() %}
+            <option value="{{ key }}" {% if key == default_model %}selected{% endif %}
+              {% if key == "trained" and not trained_model_available %}disabled{% endif %}>
+              {{ label }}{% if key == "trained" and not trained_model_available %} — train it first{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <span class="model-hint">The trained option uses weights produced by scripts/train.py.</span>
+        </label>
         <label class="file-picker" for="video-input">
           <span class="file-icon" aria-hidden="true">↑</span>
           <span id="file-label">Choose a video</span>
@@ -63,6 +75,6 @@
       </div>
     </section>
   </main>
-  <script src="{{ url_for('static', filename='app.js', v='3') }}" defer></script>
+  <script src="{{ url_for('static', filename='app.js', v='4') }}" defer></script>
 </body>
 </html>

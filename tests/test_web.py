@@ -32,6 +32,12 @@ class WebAppTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_index_offers_both_detector_choices(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'value="trained"', response.data)
+        self.assertIn(b'value="pretrained"', response.data)
+
     def test_upload_creates_downloadable_named_output(self):
         def process_video(_source, _config, output_dir, **kwargs):
             Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -45,7 +51,10 @@ class WebAppTests(unittest.TestCase):
         ):
             response = self.client.post(
                 "/api/jobs",
-                data={"video": (tempfile.SpooledTemporaryFile(), "rush hour.mp4")},
+                data={
+                    "video": (tempfile.SpooledTemporaryFile(), "rush hour.mp4"),
+                    "model_choice": "pretrained",
+                },
                 content_type="multipart/form-data",
             )
 
@@ -53,6 +62,7 @@ class WebAppTests(unittest.TestCase):
         job_id = response.get_json()["job_id"]
         status = self.client.get(f"/api/jobs/{job_id}").get_json()
         self.assertEqual(status["status"], "completed")
+        self.assertEqual(status["model_choice"], "pretrained")
         self.assertEqual(status["frame"], 5)
         self.assertEqual(status["total_frames"], 10)
         self.assertEqual(status["progress"], 50.0)
@@ -81,7 +91,10 @@ class WebAppTests(unittest.TestCase):
             responses = [
                 self.client.post(
                     "/api/jobs",
-                    data={"video": (tempfile.SpooledTemporaryFile(), "rush hour.mp4")},
+                    data={
+                        "video": (tempfile.SpooledTemporaryFile(), "rush hour.mp4"),
+                        "model_choice": "pretrained",
+                    },
                     content_type="multipart/form-data",
                 )
                 for _ in range(2)
@@ -105,21 +118,41 @@ class WebAppTests(unittest.TestCase):
         raw_path = self.output_dir / ".rush_hour_annoted_opencv.mp4"
         output_path = self.output_dir / "rush_hour_annoted.mp4"
         app.jobs[job_id] = {"status": "queued", "output_name": output_path.name}
+        captured = {}
 
-        def fake_run(_source, _config, output_dir, **kwargs):
+        def fake_run(_source, config, output_dir, **kwargs):
+            captured["weights"] = config["model"]["weights"]
             (Path(output_dir) / kwargs["annotated_filename"]).write_bytes(b"opencv")
 
         def fake_ffmpeg(command, **_kwargs):
             Path(command[-1]).write_bytes(b"h264")
 
-        with patch.object(app, "run", side_effect=fake_run), patch.object(
+        with patch.object(
+            app, "resolve_model_weights", return_value="weights/best_traffic.pt"
+        ), patch.object(app, "run", side_effect=fake_run), patch.object(
             app.shutil, "which", return_value="ffmpeg"
         ), patch.object(app.subprocess, "run", side_effect=fake_ffmpeg):
-            app._process_video(job_id, input_path, self.output_dir, output_path.name)
+            app._process_video(job_id, input_path, self.output_dir, output_path.name, "trained")
 
         self.assertEqual(output_path.read_bytes(), b"h264")
+        self.assertEqual(captured["weights"], "weights/best_traffic.pt")
         self.assertFalse(raw_path.exists())
         self.assertEqual(app.jobs[job_id]["status"], "completed")
+
+    def test_rejects_trained_model_when_checkpoint_is_missing(self):
+        with patch.object(
+            app, "resolve_model_weights", side_effect=FileNotFoundError("Train the model first.")
+        ):
+            response = self.client.post(
+                "/api/jobs",
+                data={
+                    "video": (tempfile.SpooledTemporaryFile(), "rush hour.mp4"),
+                    "model_choice": "trained",
+                },
+                content_type="multipart/form-data",
+            )
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("Train the model first.", response.get_json()["error"])
 
 
 if __name__ == "__main__":

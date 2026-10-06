@@ -4,6 +4,7 @@ runs/
 outputs/
 weights/*.pt
 data/detrac_yolo/
+data/datasets/
 data/custom/
 *.mp4
 .venv/

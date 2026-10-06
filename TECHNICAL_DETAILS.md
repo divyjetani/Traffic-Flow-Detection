@@ -46,14 +46,16 @@ video frame
 | `src/trafficflow/viz.py` | Frame annotations and live heads-up display. |
 | `src/trafficflow/road.py` | Optional SegFormer inference and road-mask tinting. |
 | `src/trafficflow/config.py` | YAML configuration loading. |
+| `src/trafficflow/models.py` | Pretrained/trained model choices and the trained-checkpoint availability check. |
 | `src/trafficflow/__init__.py` | Package version (`1.0.0`). |
 | `scripts/run.py` | Command-line entry point for video, webcam, and stream inference. |
 | `scripts/annotate_lines.py` | Mouse-based tool to define line segments on the first video/image frame. |
-| `scripts/train.py` | YOLO fine-tuning and promotion of the best checkpoint to `weights/best_traffic.pt`. |
-| `scripts/evaluate.py` | YOLO validation and mAP50 / mAP50-95 reporting. |
+| `scripts/train.py` | YOLO fine-tuning, promotion of the best checkpoint to `weights/best_traffic.pt`, and validation report generation in `model_metrics.json`. |
+| `scripts/evaluate.py` | YOLO validation and detailed metrics reporting in `model_metrics.json`. |
 | `scripts/extract_frames.py` | Periodic frame extraction for manual annotation. |
 | `scripts/convert_detrac.py` | UA-DETRAC XML-to-YOLO conversion with sequence-based train/validation splitting. |
 | `scripts/_path.py` | Adds the project `src` directory to Python's import path for scripts. |
+| `scripts/_metrics.py` | Collects overall/per-class detection metrics and writes the atomic JSON report. |
 | `configs/default.yaml` | Runtime model, flow, road segmentation, and output settings. |
 | `configs/lines_example.json` | Example virtual-line JSON format. |
 | `data/traffic.yaml` | Template dataset configuration for custom YOLO-labelled data. |
@@ -70,7 +72,7 @@ The defaults live in `configs/default.yaml`. `load_config()` reads that file rel
 
 | Key | Meaning |
 |---|---|
-| `model.weights` | Ultralytics model/checkpoint path or model name. The default is `yolo11s.pt`; Ultralytics can download this pretrained checkpoint when needed. |
+| `model.weights` | Ultralytics model/checkpoint path or model name. The YAML default is `yolo11s.pt`; the CLI and web upload flow explicitly replace it with the selected trained or pretrained checkpoint. |
 | `model.imgsz` | Inference image size. Larger images can help with small/distant vehicles at increased compute cost. |
 | `model.conf` | Detection confidence threshold. |
 | `model.iou` | IoU parameter passed to `YOLO.track` for detection/NMS behavior. |
@@ -97,7 +99,7 @@ The defaults live in `configs/default.yaml`. `load_config()` reads that file rel
 
 `road.use_segformer` is false by default. If enabled, `road.segformer_model` selects the Hugging Face model. `output.save_video` controls annotated MP4 creation, `output.trail_len` limits stored/drawn anchor history, and `output.overlay_alpha` controls the flow overlay opacity.
 
-The runtime CLI can override weights, enable SegFormer, and set the anchor. Other values are changed by supplying a custom YAML file with `--config`.
+The runtime CLI prompts for a trained/pretrained choice unless `--model-choice` or `--weights` is provided. The trained choice is the default and fails with a training instruction when `weights/best_traffic.pt` is absent; it does not fall back to the pretrained model. The web form exposes the same options and disables the trained option until that checkpoint exists. Other values are changed by supplying a custom YAML file with `--config`.
 
 ## 5. Detection, tracking, and anchors
 
@@ -294,13 +296,13 @@ The four box values are normalized to the image width/height and are between 0 a
 
 ### Training script
 
-`scripts/train.py` accepts `--data`, `--model`, `--epochs`, `--imgsz`, `--batch`, `--device`, `--name`, and `--resume`. Defaults are VisDrone, `yolo11s.pt`, 60 epochs, image size 960, batch size 16, run name `traffic`, and no resume. It trains under `runs/train/<name>`, uses patience 20, cosine learning-rate scheduling, closes mosaic augmentation for the last 10 epochs, disables rotation/vertical flips, and enables horizontal flips.
+`scripts/train.py` accepts `--data`, `--model`, `--epochs`, `--imgsz`, `--batch`, `--device`, `--name`, `--resume`, and `--report`. Defaults are VisDrone, `yolo11s.pt`, 60 epochs, image size 960, batch size 16, run name `traffic`, and no resume. It trains under `runs/train/<name>`, uses patience 20, cosine learning-rate scheduling, closes mosaic augmentation for the last 10 epochs, disables rotation/vertical flips, and enables horizontal flips.
 
-After training, it copies Ultralytics' best checkpoint to `weights/best_traffic.pt` and runs validation on that checkpoint. The copy overwrites an existing checkpoint with that name.
+After training, it copies Ultralytics' best checkpoint to `weights/best_traffic.pt` and runs validation on that checkpoint. The copy overwrites an existing checkpoint with that name. The default report `model_metrics.json` captures training metadata plus overall and per-class precision, recall, mAP50, mAP50-95, and per-image inference speed.
 
 ### Evaluation script
 
-`scripts/evaluate.py` accepts `--weights`, `--data`, and `--imgsz`. Defaults are `weights/best_traffic.pt`, `VisDrone.yaml`, and image size 960. It runs Ultralytics validation and prints mAP50 and mAP50-95. Evaluation quality depends on the dataset YAML and split being representative of the intended deployment footage.
+`scripts/evaluate.py` accepts `--weights`, `--data`, `--imgsz`, and `--report`. Defaults are `weights/best_traffic.pt`, `VisDrone.yaml`, image size 960, and `model_metrics.json`. It runs Ultralytics validation and writes the evaluation metrics to the report. Evaluation quality depends on the dataset YAML and split being representative of the intended deployment footage.
 
 ### Frame extraction and UA-DETRAC conversion
 

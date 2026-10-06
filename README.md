@@ -26,7 +26,20 @@ pip install -r requirements.txt                     # install a CUDA build of to
 python tests/test_flow.py                           # sanity test of the flow logic (no model needed)
 ```
 
-## Run (pretrained model, no training needed)
+## Run (choose your detector)
+
+The web app shows a detector selector when you upload a video. **My trained traffic model**
+is selected by default. It is unavailable until training creates
+`weights/best_traffic.pt`; in that case, explicitly select **Pretrained YOLO11s (COCO)** if
+you want to analyze a video before training. The app never silently falls back to pretrained
+weights.
+
+The command-line runner prompts for the same choice, or accepts it explicitly:
+```bash
+python scripts/run.py --source data/videos/traffic.mp4 --model-choice trained
+python scripts/run.py --source data/videos/traffic.mp4 --model-choice pretrained
+```
+Omit `--model-choice` to be prompted:
 ```bash
 python scripts/run.py --source data/videos/traffic.mp4
 python scripts/run.py --source 0                                   # webcam
@@ -34,7 +47,9 @@ python scripts/run.py --source rtsp://user:pass@ip/stream          # IP camera
 python scripts/run.py --source traffic.mp4 --anchor center         # drone / top-down footage
 python scripts/run.py --source traffic.mp4 --segformer             # + road segmentation (pip install transformers)
 ```
-`yolo11s.pt` (COCO) downloads automatically and already detects car / bus / truck / motorcycle.
+Use `--model-choice trained` or `--model-choice pretrained` to choose from the command line.
+The pretrained option uses `yolo11s.pt` (COCO); the trained option uses the fine-tuned
+VisDrone checkpoint created below.
 
 ## Web app
 On Windows, run `run` from Command Prompt at the repository root (or `.\run.bat` from PowerShell).
@@ -58,7 +73,12 @@ python scripts/run.py --source data/videos/traffic.mp4 --lines configs/lines.jso
 ```
 
 ## Train / fine-tune your own model
-Pretrained COCO works well for ground-level cameras. Train when footage is aerial, night, fisheye or far away.
+
+The default command downloads the public VisDrone dataset automatically on first run and
+fine-tunes YOLO11s on its training split. It then evaluates the custom checkpoint on the
+held-out validation split. Dataset files are stored under `data/datasets/VisDrone/` and
+ignored by Git. The trained inference choice loads these fine-tuned weights, not the original
+COCO checkpoint.
 ```bash
 python scripts/train.py --data VisDrone.yaml                       # drone view; dataset auto-downloads
 python scripts/convert_detrac.py --images <DETRAC-train-data> --ann <DETRAC-Train-Annotations-XML>
@@ -68,8 +88,18 @@ python scripts/train.py --data data/traffic.yaml --epochs 80
 python scripts/evaluate.py --weights weights/best_traffic.pt --data data/traffic.yaml
 python scripts/run.py --source my.mp4 --weights weights/best_traffic.pt
 ```
-Tips: start from `yolo11s.pt`; use `--model yolo11m.pt` if GPU allows; `--imgsz 1280` for small far vehicles;
-free GPU: Google Colab / Kaggle notebooks.
+Training writes the single machine-readable [`model_metrics.json`](./model_metrics.json)
+report. It records the dataset and split, fine-tuning settings, completed epochs, overall
+precision, recall, mAP50 and mAP50-95, per-class metrics, and inference speed. These are
+object-detection metrics rather than a single classification-style accuracy score. To refresh
+measurements for an existing checkpoint, run `scripts/evaluate.py` with the same dataset and
+image size.
+
+### Latest trained-model validation
+
+Run `python scripts/train.py` to create `model_metrics.json`. Use that report as the source
+of truth for the measured metrics of the latest checkpoint; values are generated from the
+actual held-out validation run rather than guessed or hard-coded.
 
 ## Where to get data
 | Need | Source |

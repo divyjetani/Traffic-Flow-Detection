@@ -28,6 +28,9 @@ h2 { margin-bottom: 6px; font-size: 19px; letter-spacing: -.02em; }
 .upload-card, .video-card { border: 1px solid var(--line); border-radius: 16px; background: rgba(17, 28, 45, .92); box-shadow: 0 14px 40px #050a1240; }
 .upload-card { padding: 24px; }
 .upload-card form { display: flex; align-items: center; gap: 12px; margin-top: 21px; }
+.model-picker { display: grid; flex: 0 0 255px; gap: 7px; color: #e9f0f8; font-size: 12px; font-weight: 650; }
+.model-picker select { width: 100%; min-height: 42px; border: 1px solid #3c5068; border-radius: 9px; padding: 0 10px; background: #0b1220; color: inherit; font: inherit; }
+.model-hint { color: var(--muted); font-size: 10px; font-weight: 400; line-height: 1.4; }
 .file-picker { display: flex; min-width: 0; flex: 1; align-items: center; gap: 12px; padding: 12px 14px; border: 1px dashed #3c5068; border-radius: 10px; color: #e9f0f8; cursor: pointer; font-size: 13px; font-weight: 650; }
 .file-picker:hover { border-color: var(--accent); }
 .file-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #17342f; color: var(--accent); font-size: 20px; }
@@ -70,6 +73,7 @@ footer { margin-top: 35px; color: #65738a; font-size: 11px; text-align: center; 
   .page { width: min(100% - 28px, 520px); padding-top: 30px; }
   .upload-card { padding: 19px; }
   .upload-card form { align-items: stretch; flex-direction: column; }
+  .model-picker { flex-basis: auto; }
   .file-picker { flex-wrap: wrap; }
   .file-hint { flex-basis: 100%; margin-left: 44px; }
   .video-grid { grid-template-columns: 1fr; }

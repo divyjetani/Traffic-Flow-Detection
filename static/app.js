@@ -164,7 +164,9 @@ async function pollJob(jobId, sequence) {
     if (job.status !== "completed") throw new Error("The job returned an unknown status.");
 
     processingProgress.hidden = true;
-    outputName.textContent = job.output_name;
+    const modelLabel =
+      job.model_choice === "trained" ? "My trained traffic model" : "Pretrained YOLO11s (COCO)";
+    outputName.textContent = `${modelLabel} · ${job.output_name}`;
     downloadLink.href = job.download_url;
     downloadLink.download = job.output_name;
     downloadLink.hidden = false;
