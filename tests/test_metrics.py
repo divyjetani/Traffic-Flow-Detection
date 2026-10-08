@@ -23,13 +23,25 @@ class MetricReportTests(unittest.TestCase):
             map=0.625,
         )
         results = SimpleNamespace(box=box, speed={"inference": 2.5})
-        model = SimpleNamespace(names={0: "car"}, val=lambda **_: results)
+        requested_splits = []
+
+        def validate(**kwargs):
+            requested_splits.append(kwargs["split"])
+            return results
+
+        model = SimpleNamespace(names={0: "car"}, val=validate)
 
         report = collect_metrics(model, data="VisDrone.yaml", imgsz=640)
+        test_report = collect_metrics(
+            model, data="VisDrone.yaml", imgsz=640, split="test"
+        )
 
         self.assertEqual(report["metrics"]["map50"], 0.75)
         self.assertEqual(report["per_class"]["car"]["precision"], 0.8)
         self.assertEqual(report["speed_ms_per_image"]["inference"], 2.5)
+        self.assertEqual(report["split"], "val")
+        self.assertEqual(test_report["split"], "test")
+        self.assertEqual(requested_splits, ["val", "test"])
 
     def test_writes_valid_json_report(self):
         with tempfile.TemporaryDirectory() as directory:

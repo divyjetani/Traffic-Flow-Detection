@@ -6,10 +6,9 @@ PRETRAINED_WEIGHTS = PROJECT_ROOT / "yolo11s.pt"
 TRAINED_WEIGHTS = PROJECT_ROOT / "weights" / "best_traffic.pt"
 
 MODEL_CHOICES = {
-    "trained": "My trained traffic model",
-    "pretrained": "Pretrained YOLO11s (COCO)",
+    "trained": "Pretrained YOLO11s (COCO)",
+    "pretrained": "Trained traffic model",
 }
-
 
 def default_model_choice():
     return "trained"

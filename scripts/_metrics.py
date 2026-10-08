@@ -5,8 +5,8 @@ import tempfile
 from pathlib import Path
 
 
-def collect_metrics(model, data, imgsz):
-    results = model.val(data=data, imgsz=imgsz, split="val")
+def collect_metrics(model, data, imgsz, split="val"):
+    results = model.val(data=data, imgsz=imgsz, split=split)
     box = results.box
     names = model.names
     per_class = {}
@@ -22,7 +22,7 @@ def collect_metrics(model, data, imgsz):
 
     return {
         "dataset": str(data),
-        "split": "val",
+        "split": split,
         "image_size": imgsz,
         "metrics": {
             "precision": float(box.mp),

@@ -165,7 +165,7 @@ async function pollJob(jobId, sequence) {
 
     processingProgress.hidden = true;
     const modelLabel =
-      job.model_choice === "trained" ? "My trained traffic model" : "Pretrained YOLO11s (COCO)";
+      job.model_choice === "trained" ? "Pretrained YOLO11s (COCO)" : "My trained traffic model";
     outputName.textContent = `${modelLabel} · ${job.output_name}`;
     downloadLink.href = job.download_url;
     downloadLink.download = job.output_name;

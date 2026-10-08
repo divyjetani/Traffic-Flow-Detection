@@ -74,11 +74,16 @@ python scripts/run.py --source data/videos/traffic.mp4 --lines configs/lines.jso
 
 ## Train / fine-tune your own model
 
-The default command downloads the public VisDrone dataset automatically on first run and
-fine-tunes YOLO11s on its training split. It then evaluates the custom checkpoint on the
-held-out validation split. Dataset files are stored under `data/datasets/VisDrone/` and
-ignored by Git. The trained inference choice loads these fine-tuned weights, not the original
-COCO checkpoint.
+The default command downloads the public VisDrone dataset automatically on first run, then
+combines its annotated train, validation, and test-dev images and reproducibly partitions them
+into 70% training, 15% validation, and 15% test. It fine-tunes YOLO11s on the training
+partition, validates on the validation partition, and reports final metrics on the held-out
+test partition. Original dataset files remain untouched under `data/datasets/VisDrone/`;
+split manifests are written to the ignored `data/datasets/VisDrone-70-15-15/` directory.
+The trained inference choice loads these fine-tuned weights, not the original COCO checkpoint.
+With the current 8,629 labeled images and default seed 42, the split contains 6,040 training,
+1,294 validation, and 1,295 test images. Whole-image rounding can make the exact percentages
+differ by a fraction of a percentage point.
 ```bash
 python scripts/train.py --data VisDrone.yaml                       # drone view; dataset auto-downloads
 python scripts/convert_detrac.py --images <DETRAC-train-data> --ann <DETRAC-Train-Annotations-XML>
@@ -94,24 +99,18 @@ precision, recall, mAP50 and mAP50-95, per-class metrics, and inference speed. T
 object-detection metrics rather than a single classification-style accuracy score. To refresh
 measurements for an existing checkpoint, run `scripts/evaluate.py` with the same dataset and
 image size.
-Use `--fraction` to limit training images during a quick experiment; normal training uses the
-full dataset. For example, `--fraction 0.01` uses 1% of the training split.
+Use `--split-seed` to change the reproducible random partition (default seed: 42). Use
+`--fraction` only to limit training images during a quick experiment; normal training uses the
+full 70% training partition.
 
 ### Latest trained-model validation
 
-The most recent completed fine-tune used YOLO11s, 1% of VisDrone's training split (65 images),
-3 epochs, 320px images, and CPU. On the held-out validation split (548 images, 38,759 objects),
-it achieved:
-
-| Precision | Recall | mAP50 | mAP50-95 |
-|---:|---:|---:|---:|
-| 0.1749 | 0.0620 | 0.0284 | 0.0126 |
-
-These are measured object-detection metrics, not classification accuracy. This small CPU run
-was only a smoke-test fine-tune and performs poorly; run the full-data training command above
-(or fine-tune on representative labelled traffic-camera footage) before relying on the model
-for real traffic analysis. The full per-class report, training settings, metrics, and timing
-are in [`model_metrics.json`](./model_metrics.json).
+The checkpoint currently in `weights/best_traffic.pt` predates the 70/15/15 repartitioning
+code. Run `python scripts/train.py` to produce a newly trained checkpoint and
+[`model_metrics.json`](./model_metrics.json) with the actual split counts, validation metrics,
+and held-out test metrics. The previous short CPU smoke-test results are not results for the
+new 70/15/15 split. Detection quality is reported as precision, recall, mAP50, and mAP50-95;
+these are object-detection metrics, not classification accuracy.
 
 ## Where to get data
 | Need | Source |

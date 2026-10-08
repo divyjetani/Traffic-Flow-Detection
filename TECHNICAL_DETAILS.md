@@ -50,7 +50,7 @@ video frame
 | `src/trafficflow/__init__.py` | Package version (`1.0.0`). |
 | `scripts/run.py` | Command-line entry point for video, webcam, and stream inference. |
 | `scripts/annotate_lines.py` | Mouse-based tool to define line segments on the first video/image frame. |
-| `scripts/train.py` | YOLO fine-tuning, promotion of the best checkpoint to `weights/best_traffic.pt`, and validation report generation in `model_metrics.json`. |
+| `scripts/train.py` | Reproducible VisDrone train/validation/test partitioning, YOLO fine-tuning, best-checkpoint promotion, and metrics report generation. |
 | `scripts/evaluate.py` | YOLO validation and detailed metrics reporting in `model_metrics.json`. |
 | `scripts/extract_frames.py` | Periodic frame extraction for manual annotation. |
 | `scripts/convert_detrac.py` | UA-DETRAC XML-to-YOLO conversion with sequence-based train/validation splitting. |
@@ -296,9 +296,9 @@ The four box values are normalized to the image width/height and are between 0 a
 
 ### Training script
 
-`scripts/train.py` accepts `--data`, `--model`, `--epochs`, `--imgsz`, `--batch`, `--device`, `--name`, `--resume`, and `--report`. Defaults are VisDrone, `yolo11s.pt`, 60 epochs, image size 960, batch size 16, run name `traffic`, and no resume. It trains under `runs/train/<name>`, uses patience 20, cosine learning-rate scheduling, closes mosaic augmentation for the last 10 epochs, disables rotation/vertical flips, and enables horizontal flips.
+`scripts/train.py` accepts `--data`, `--model`, `--epochs`, `--imgsz`, `--batch`, `--fraction`, `--split-seed`, `--device`, `--name`, `--resume`, and `--report`. Defaults are VisDrone, `yolo11s.pt`, 60 epochs, image size 960, batch size 16, full training fraction, split seed 42, run name `traffic`, and no resume. For VisDrone, it combines labeled images from the source train, validation, and test-dev directories and writes deterministic image-list manifests with 70% training, 15% validation, and 15% test under the ignored `data/datasets/VisDrone-70-15-15/` directory; original files are not moved. It trains under `runs/train/<name>`, uses patience 20, cosine learning-rate scheduling, closes mosaic augmentation for the last 10 epochs, disables rotation/vertical flips, and enables horizontal flips.
 
-After training, it copies Ultralytics' best checkpoint to `weights/best_traffic.pt` and runs validation on that checkpoint. The copy overwrites an existing checkpoint with that name. The default report `model_metrics.json` captures training metadata plus overall and per-class precision, recall, mAP50, mAP50-95, and per-image inference speed.
+After training, it copies Ultralytics' best checkpoint to `weights/best_traffic.pt` and evaluates it on both the validation and held-out test splits. The copy overwrites an existing checkpoint with that name. The default report `model_metrics.json` captures split counts, training metadata, and overall/per-class precision, recall, mAP50, mAP50-95, and per-image inference speed.
 
 ### Evaluation script
 
