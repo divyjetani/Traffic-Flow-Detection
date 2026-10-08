@@ -94,12 +94,24 @@ precision, recall, mAP50 and mAP50-95, per-class metrics, and inference speed. T
 object-detection metrics rather than a single classification-style accuracy score. To refresh
 measurements for an existing checkpoint, run `scripts/evaluate.py` with the same dataset and
 image size.
+Use `--fraction` to limit training images during a quick experiment; normal training uses the
+full dataset. For example, `--fraction 0.01` uses 1% of the training split.
 
 ### Latest trained-model validation
 
-Run `python scripts/train.py` to create `model_metrics.json`. Use that report as the source
-of truth for the measured metrics of the latest checkpoint; values are generated from the
-actual held-out validation run rather than guessed or hard-coded.
+The most recent completed fine-tune used YOLO11s, 1% of VisDrone's training split (65 images),
+3 epochs, 320px images, and CPU. On the held-out validation split (548 images, 38,759 objects),
+it achieved:
+
+| Precision | Recall | mAP50 | mAP50-95 |
+|---:|---:|---:|---:|
+| 0.1749 | 0.0620 | 0.0284 | 0.0126 |
+
+These are measured object-detection metrics, not classification accuracy. This small CPU run
+was only a smoke-test fine-tune and performs poorly; run the full-data training command above
+(or fine-tune on representative labelled traffic-camera footage) before relying on the model
+for real traffic analysis. The full per-class report, training settings, metrics, and timing
+are in [`model_metrics.json`](./model_metrics.json).
 
 ## Where to get data
 | Need | Source |

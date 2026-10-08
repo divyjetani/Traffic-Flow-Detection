@@ -24,6 +24,8 @@ ap.add_argument("--model", default="yolo11s.pt", help="pretrained start point (n
 ap.add_argument("--epochs", type=int, default=60)
 ap.add_argument("--imgsz", type=int, default=960)
 ap.add_argument("--batch", type=int, default=16, help="-1 = auto")
+ap.add_argument("--fraction", type=float, default=1.0,
+                help="fraction of the training split to use (0 < fraction <= 1)")
 ap.add_argument("--device", default=None)
 ap.add_argument("--name", default="traffic")
 ap.add_argument("--resume", action="store_true")
@@ -33,6 +35,7 @@ a = ap.parse_args()
 
 model = YOLO(a.model)
 model.train(data=a.data, epochs=a.epochs, imgsz=a.imgsz, batch=a.batch, device=a.device,
+            fraction=a.fraction,
             project=str(PROJECT_ROOT / "runs" / "train"), name=a.name, patience=20,
             cos_lr=True, close_mosaic=10,
             degrees=0.0, flipud=0.0, fliplr=0.5, resume=a.resume)
@@ -58,6 +61,7 @@ report = {
         "epochs_completed": int(model.trainer.epoch + 1),
         "image_size": a.imgsz,
         "batch_size": a.batch,
+        "dataset_fraction": a.fraction,
         "device": str(model.trainer.device),
         "metrics": training_metrics,
     },
